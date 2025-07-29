@@ -89,13 +89,14 @@
 #'                                  
 #' # to use only certain categories for comparison: 
 #' # let's randomly add another level of response to the example metadata
+#' synthetic_metadata$response <- as.character(synthetic_metadata$response)
 #' indices <- sample(1:nrow(synthetic_metadata), 20, replace = FALSE) 
 #' synthetic_metadata$response[indices] <- "Moderate response"
 #' deggs_object <- get_diffNetworks(assayData = assayData_list,
 #'                                  metadata = synthetic_metadata,
 #'                                  category_variable = "response",
 #'                                  category_subset = c("Responder", 
-#'                                                      "Non-responder"),
+#'                                                      "Non_responder"),
 #'                                  regression_method = "lm",
 #'                                  verbose = FALSE,
 #'                                  show_progressBar = FALSE,
@@ -107,7 +108,7 @@
 #'                                  metadata = synthetic_metadata,
 #'                                  category_variable = "response",
 #'                                  category_subset = c("Responder", 
-#'                                                      "Non-responder"),
+#'                                                      "Non_responder"),
 #'                                  regression_method = "lm",
 #'                                  percentile_vector = seq(0.25, 0.98, by = 0.05),
 #'                                  verbose = FALSE,
@@ -899,8 +900,9 @@ get_multiOmics_diffNetworks <- function(deggs_object,
         return(data.frame())
       }
       
-      # Add a source column to identify the omicDataset
+      # Add a source column to identify the omicDataset and filter by sig
       network$layer <- omicDataset
+      network <- network[which(network[, sig_var] < sig_threshold), ]
       
       return(network)
     })
@@ -913,8 +915,6 @@ get_multiOmics_diffNetworks <- function(deggs_object,
     if (length(category_networks) > 0) {
       merged_network <- do.call(rbind, category_networks)
       merged_network$layer <- as.factor(merged_network$layer)
-      merged_network <- merged_network[which(merged_network[, sig_var] <
-                                               sig_threshold), ]
       return(merged_network)
     } else {
       message("No valid category_networks found for category: ", category, ".")
