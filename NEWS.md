@@ -1,3 +1,6 @@
+# multiDEGGs 1.1.1
+Minor fixes in documetation
+
 # multiDEGGs 1.1.0
 ### New features for feature augmentation in ML
 Two new functions are provided for nested feature engineering. To use them in 
