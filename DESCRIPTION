@@ -1,6 +1,6 @@
 Package: multiDEGGs
 Title: Multi-Omic Differentially Expressed Gene-Gene Pairs
-Version: 1.1.2
+Version: 1.1.3
 Authors@R: 
     c(person(given = "Elisabetta",
           family = "Sciacca",
@@ -46,9 +46,9 @@ Depends: R (>= 4.4.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2026-01-15 17:52:41 UTC; elisabetta
+Packaged: 2026-02-02 15:35:41 UTC; elisabetta
 Author: Elisabetta Sciacca [aut, cre, cph] (ORCID:
     <https://orcid.org/0000-0001-7525-1558>),
   Myles Lewis [ctb] (ORCID: <https://orcid.org/0000-0001-9365-5345>)
 Repository: CRAN
-Date/Publication: 2026-01-16 00:40:02 UTC
+Date/Publication: 2026-02-02 16:20:02 UTC

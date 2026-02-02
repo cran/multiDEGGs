@@ -1515,8 +1515,10 @@ machine learning pipelines, providing biologically meaningful predictors
 that capture relational information between molecular entities. The
 package includes specialized functions for nested cross-validation that
 ensure proper feature selection and engineering without data leakage,
-enabling the construction of robust and interpretable predictive
-models.</p>
+enabling the construction of robust and interpretable predictive models
+(see
+<code>vignette(&quot;2. Feature Selection&quot;, package = &quot;multiDEGGs&quot;)</code>
+for details).</p>
 </div>
 <div id="installation" class="section level2">
 <h2>Installation</h2>
@@ -1527,6 +1529,12 @@ models.</p>
 </div>
 <div id="quick-start---generate-differential-networks" class="section level2">
 <h2>Quick start - Generate Differential Networks</h2>
+<p>If you are working with human data, you can start differential
+analysis by using the internal multiDEGGs’ default reference
+network.<br />
+Users working with other species or requiring custom interaction sets
+can provide their own biological reference netowork as detailed in the
+last paragraph of this vignette.</p>
 <p>Let’s start by loading the package and sample data:</p>
 <pre class="r"><code>library(multiDEGGs)
 data(&quot;synthetic_metadata&quot;)
@@ -1595,7 +1603,7 @@ for each omic data in <code>assayData_list</code>. These networks can be
 integrated into a comprehensive visualization where different colors
 distinguish links from different omic layers.</p>
 <pre class="r"><code>View_diffNetworks(deggs_object)</code></pre>
-<p>This visualization interface allows you to:</p>
+<p>This visualization interface allows to:</p>
 <ol style="list-style-type: decimal">
 <li>Navigate the networks associated with each patient category</li>
 <li>Filter by link significance</li>
@@ -1620,7 +1628,20 @@ link:</p>
 <p>
  
 </p>
-<p>Single node differential expressions can also be visualized by
+<p><br> This <strong>visual inspection of individual links is
+essential</strong> before drawing any biological conclusions. These
+regression plots allow assessment of:</p>
+<ul>
+<li><strong>Effect size</strong>: the magnitude of the difference in
+interaction strength between groups</li>
+<li><strong>Model fit quality</strong>: how well the regression lines
+represent the data</li>
+<li><strong>Noise levels</strong>: the scatter and confidence intervals
+around the regression lines</li>
+<li><strong>Outliers</strong>: presence of influential data points that
+might drive the observed difference</li>
+</ul>
+<p><br> Single node differential expressions can also be visualized by
 clicking on the nodes:</p>
 <p>
  
@@ -1729,308 +1750,79 @@ While regressions and boxplots will show all categories:
 via one-way ANOVA in this case.<br />
 We highly recommend to have at least 4 or 5 observations per group.</p>
 </div>
-<div id="feature-selection-and-engineering-with-multideggs-in-nested-cross-validation" class="section level2">
-<h2>Feature Selection and Engineering with multiDEGGs in Nested
-Cross-Validation</h2>
-<p>In computational biology applications involving high-throughput data,
-researchers commonly encounter situations where the number of potential
-predictors far exceeds the available sample size. This dimensional
-challenge requires careful feature selection strategies for both
-mathematical and clinical reasons.</p>
-<p>Standard feature selection methods typically evaluate predictors
-individually, identifying those variables that show the strongest
-univariate associations with the outcome variable (such as through
-t-tests or Wilcoxon tests). While effective, this approach overlooks the
-interconnected nature of biological systems, where </p>
-<p>Feature engineering represents a complementary strategy that creates
-new predictors by combining or transforming existing variables. In
-biology, such approach can be used to capture higher-order information
-that reflects the interconnected nature of molecular processes. For
-instance, the ratio between two genes may provide more discriminative
-power than either gene expression level independently, particularly when
-their relative balance is disrupted in disease states.</p>
-<p>The informative content encoded in differential interactions,
-combined with multiDEGGs’ ability to identify only literature-validated
-differential relationships, makes it particularly well-suited for both
-individual feature selection and guided creation of engineered
-predictors in machine learning. Such approach has potential to overcome
-the limitations of conventional algorithms which may select individual
-predictors without clear biological significance, compromising both the
-interpretability and clinical credibility of the resulting models.</p>
-<div id="why-nested-cross-validation-for-feature-engineering" class="section level3">
-<h3>Why Nested Cross-Validation for Feature Engineering?</h3>
-<p>It is crucial that feature selection and modification is conducted
-exclusively on training data within cross-validation loops to prevent
-information leakage from the test set. The <code>nestedcv</code> package
-enables the nested modification of predictors within each outer fold,
-ensuring that the attributes learned from the training part are applied
-to the test data without prior knowledge of the test data itself.<br />
-The selected and combined features, and corresponding model, can then be
-evaluated on the hold-out test data without introducing bias.</p>
-<p>Both (nestcv.glmnet) and (nestcv.train) from <code>nestedcv</code>
-accept any user-defined function that filters or transforms the feature
-matrix by passing the function name to the <code>modifyX</code>
-parameter.<br />
-<strong>The multiDEGGs package provides two specialized functions for
-this purpose.</strong></p>
-</div>
-<div id="multideggs_filter-pure-differential-network-based-selection" class="section level3">
-<h3>multiDEGGs_filter(): Pure Differential Network-Based Selection</h3>
-<p>The <code>multiDEGGs_filter()</code> function performs feature
-selection based entirely on differential network analysis. It identifies
-significant differential molecular interactions and can return either
-the interaction pairs alone or both pairs and individual variables
-involved in those interactions.</p>
-<div id="key-parameters" class="section level4">
-<h4>Key Parameters</h4>
-<p>When using <code>multiDEGGs_filter()</code>, you can control the
-following parameters through <code>modifyX_options</code>:</p>
+<div id="custom-reference-network" class="section level2">
+<h2>Custom Reference Network</h2>
+<p>The multiDEGGs package uses a human-specific reference network by
+default, consisting of 10,537 molecular interactions (from KEGG,
+mirTARbase, miRecords, and transmiR) obtained via the
+<code>exportgraph</code> function of the MITHrIL tool (Alaimo et al.,
+Oncotarget, 2016).</p>
+<p>Users working with non-human species or requiring custom interaction
+sets can provide their own reference network using the
+<code>network</code> parameter of the <code>get_diffNetworks()</code>
+function.<br />
+<br></p>
+<p><strong>Network Requirements</strong><br />
+The custom network must be a <code>data.frame</code> with exactly two
+columns:</p>
 <ul>
-<li><strong><code>keep_single_genes</code></strong> (logical, default
-<code>FALSE</code>): Controls whether to include individual genes from
-significant pairs in addition to the pairs themselves</li>
-<li><strong><code>nfilter</code></strong> (integer, default
-<code>NULL</code>): Maximum number of predictors to return. When
-<code>NULL</code>, all significant interactions found are included</li>
+<li><code>from</code>: Origin node (e.g., Transcription Factor, miRNA,
+or Gene)</li>
+<li><code>to</code>: Target node</li>
 </ul>
-</div>
-<div id="usage-examples" class="section level4">
-<h4>Usage Examples</h4>
-<div id="basic-usage-pairs-only" class="section level5">
-<h5>Basic Usage: Pairs Only</h5>
-<pre class="r"><code>library(nestedcv)
-data(&quot;synthetic_metadata&quot;)
-data(&quot;synthetic_rnaseqData&quot;)
-
-# Regularized linear model with interaction pairs only
-fit.glmnet &lt;- nestcv.glmnet(
-  y = as.numeric(synthetic_metadata$response),
-  x = t(synthetic_rnaseqData),
-  modifyX = &quot;multiDEGGs_filter&quot;,
-  modifyX_options = list(
-    keep_single_genes = FALSE,
-    nfilter = 20
-  ),
-  modifyX_useY = TRUE,
-  n_outer_folds = 5,
-  n_inner_folds = 6,
-  verbose = FALSE
+<p>Nodes should use the same nomenclature (e.g., Gene Symbols, Entrez
+IDs) as the expression assay data to ensure proper mapping during the
+differential network analysis.<br />
+<br></p>
+<p><strong>Sources for Other Species</strong><br />
+If you are working with non-human species, several repositories allow
+for the extraction of interaction data:</p>
+<ul>
+<li><strong>STRING-db</strong>: Ideal for protein-protein interactions
+(PPI) across thousands of species. You can download the “protein.links”
+files</li>
+<li><strong>KEGG</strong> (via <code>KEGGgraph</code> or
+<code>TIGER</code>): Useful for metabolic and signaling pathways</li>
+<li><strong>Omnipath</strong>: A comprehensive resource that integrates
+multiple databases for human and mouse, easily accessible via the
+<code>OmnipathR</code> package</li>
+<li><strong>miRBase</strong> or <strong>TargetScan</strong>: For those
+needing specific miRNA-target interactions for non-human models</li>
+</ul>
+<p><br></p>
+<p><strong>Example: Generating a Custom Network in R</strong><br />
+Below is a practical example of how to prepare a custom network,
+assuming you have a list of interactions:</p>
+<pre><code># Example: Creating a toy network for a non-human species
+# In a real scenario, you might load a CSV or use a database-specific package
+interaction_data &lt;- data.frame(
+  source = c(&quot;GeneA&quot;, &quot;GeneB&quot;, &quot;miRNA1&quot;),
+  target = c(&quot;GeneC&quot;, &quot;GeneA&quot;, &quot;GeneB&quot;),
+  confidence = c(0.9, 0.8, 0.95)
 )
 
-summary(fit.glmnet)
-#&gt; Nested cross-validation with glmnet
-#&gt; No filter
-#&gt; Modifier:  multiDEGGs_filter 
-#&gt; Outer loop:  5-fold CV
-#&gt; Inner loop:  6-fold CV
-#&gt; 100 observations, 14 predictors
-#&gt; 
-#&gt;        alpha lambda n.filter
-#&gt; Fold 1   0.1 0.0699        7
-#&gt; Fold 2   0.1 0.1354        7
-#&gt; Fold 3   0.3 0.1157        7
-#&gt; Fold 4   1.0 0.1511        7
-#&gt; Fold 5   0.1 0.1533        7
-#&gt; 
-#&gt; Final parameters:
-#&gt; lambda   alpha  
-#&gt;  0.103   0.100  
-#&gt; 
-#&gt; Final coefficients:
-#&gt;  (Intercept) TNF:TNFRSF1A    AKT2:MTOR   IL1B:IL1R2    FASLG:FAS TGFB3:TGFBR1 
-#&gt;     1.772243    -0.177586    -0.098467     0.044969    -0.031801    -0.024212 
-#&gt; MAP2K2:MAPK3  FANCD2:FAN1 
-#&gt;    -0.019025    -0.007843 
-#&gt; 
-#&gt; Result:
-#&gt;        RMSE     R.squared   Pearson.r^2           MAE   
-#&gt;     0.46953       0.09498       0.09500       0.44754</code></pre>
-</div>
-<div id="including-individual-genes-keep_single_genes-true" class="section level5">
-<h5>Including Individual Genes (keep_single_genes = TRUE)</h5>
-<pre class="r"><code># Random forest model including both pairs and individual genes
-fit.rf &lt;- nestcv.train(
-  y = synthetic_metadata$response,
-  x = t(synthetic_rnaseqData),
-  method = &quot;rf&quot;,
-  modifyX = &quot;multiDEGGs_filter&quot;,
-  modifyX_options = list(
-    keep_single_genes = TRUE,
-    nfilter = 30
-  ),
-  modifyX_useY = TRUE,
-  n_outer_folds = 5,
-  n_inner_folds = 6,
-  verbose = FALSE
-)
-#&gt; Loading required package: ggplot2
-#&gt; Warning: package &#39;ggplot2&#39; was built under R version 4.4.3
-#&gt; Loading required package: lattice
+# Formatting for get_diffNetworks() 
+# We only need the &#39;from&#39; and &#39;to&#39; columns
+custom_network &lt;- interaction_data[, c(&quot;source&quot;, &quot;target&quot;)]
+colnames(custom_network) &lt;- c(&quot;from&quot;, &quot;to&quot;)
 
-fit.rf$summary
-#&gt;                Reference
-#&gt; Predicted       Non_responder Responder
-#&gt;   Non_responder            56         0
-#&gt;   Responder                 2        42
-#&gt; 
-#&gt;               AUC            Accuracy   Balanced accuracy   
-#&gt;            1.0000              0.9800              0.9828
+# Check class and structure
+print(class(custom_network))
+head(custom_network)
 
-# Plot ROC on outer folds
-plot(fit.rf$roc)</code></pre>
-<p><img role="img" aria-label src="data:image/png;base64,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AAIIhE6AACh0TU6FEUAAAQQQQIAAiO8AAggggAACCIROgAAodE1OhRFAAAEEEECAAIjvAAIIIIAAAgiEToAAKHRNToURQAABBBBAgACI7wACCCCAAAIIhE6AACh0TU6FEUAAAQQQQIAAiO8AAggggAACCIROgAAodE1OhRFAAAEEEECAAIjvAAIIIIAAAgiEToAAKHRNToURQAABBBBAgACI7wACCCCAAAIIhE6AACh0TU6FEUAAAQQQQIAAiO8AAggggAACCIROgAAodE1OhRFAAAEEEECAAIjvAAIIIIAAAgiEToAAKHRNToURQAABBBBAgACI7wACCCCAAAIIhE6AACh0TU6FEUAAAQQQQIAAiO8AAggggAACCIROgAAodE1OhRFAAAEEEECAAIjvAAIIIIAAAgiEToAAKHRNToURQAABBBBAgACI7wACCCCAAAIIhE6AACh0TU6FEUAAAQQQQIAAiO8AAggggAACCIROgAAodE1OhRFAAAEEEECAAIjvAAIIIIAAAgiEToAAKHRNToURQAABBBBAgACI7wACCCCAAAIIhE6AACh0TU6FEUAAAQQQQIAAiO8AAggggAACCIROgAAodE1OhRFAAAEEEECAAIjvAAIIIIAAAgiEToAAKHRNToURQAABBBBAgACI7wACCCCAAAIIhE6AACh0TU6FEUAAAQQQQIAAiO8AAggggAACCIROgAAodE1OhRFAAAEEEECAAIjvAAIIIIAAAgiETqBM6GpMhfMqsGXLFpkyZYrs3Lkzr+Xg5AgggICfBapXry69e/eWgoICP1cjr2UnAMorf/hO/te//lVuv/328FWcGiOAAAIuCJQpU0ZatGghK1eulAkTJkifPn1cyDWcWRAAhbPd81brjRs3mnO3a9fO/BDnrSCcGAEEEPCZQNmyZaVVq1ZSuXJleeihh2TDhg0+q4G3iksA5K32CE1pzjnnHBkyZEho6ktFEUAAgUwE/vvf/5ruA+vWrRPtSvDdd99lkh3HWgJ0guZrgAACCCCAgIcFooOfGjVqyIIFC2TXrl0eLrE/ikYA5I92opQIIIAAAiEUKBr8aMdnHiJx54tAAOSOI7kggAACCCDgqkCs4KdixYquniPMmREAhbn1qTsCCCCAgCcFCH6y3ywEQNk35gwIIIAAAggkLUDwkzRVRjsSAGXEx8EIIIAAAgi4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vfekR48eorPJ2+m5556T8847T5555hl7Fe8IIIBAUgIEP0kxsRMCgRLwZACkj7FrgLNgwQKD/dNPPznoy5YtkwEDBhQKfuyNGiy1bt1ahg0bZq/iHQEEEIgrQPATl4eNCARWwJN9gEaOHOkEP3pLq1SpvcUcP368rFmzxjRImzZt5JNPPhG9InT44Yebddddd5188803gW0wKoYAAu4JEPy4Z0lOCPhNwHNXgPS21sMPP2wcNah54oknpG3bto7rSy+95Cw/9dRTzjYNgho3biw6qKIGRS1btnT2YwEBBBAoKkDwU1SEzwiES2DvpRWP1Ftvd9kjOY8YMcIJcLR4P/zwgyxevNiUtHnz5oW2aUfo0047zWz74osvzDv/IIAAArEECH5iqbAOgXAJeC4A+vbbb00L6IjQ3bp1K9Qa06ZNcz6fdNJJzrK9oFeANM2bN8+88w8CCCBQVIDgp6gInxEIp4DnAqBffvnFtIROj1F0SovoAKh79+7FWmznzp1mnT42T0IAAQSKChD8FBXhMwLhFfBcANSgQQPTGjorfHTSX1wzZswwqypUqCCdOnWK3myWv//+e/PesGHDYttYgQAC4RYg+Al3+1N7BIoKeC4AOuigg0wZt23bZp7usgs8adIk0XWajj/+eKlYsaK9ybzr/GFvvPGGWW7SpEmhbXxAAIFwCxD8hLv9qT0CsQQ89xRYq1atpEWLFqIjPQ8aNEgefPBB2bx5c6Gxfc4999xCdZk9e7acc845Yt8CO//88wtt9+MHfRru448/NkVv1KiRENT5sRUpsxcECH680AqUAQHvCXjuCpCO+3PLLbcYKe0PpNNbnH322bJu3Tqz7rjjjpP+/fs7kp07d5aOHTs6T4f17dtXdHwgvycN+vRKl76efPJJv1eH8iOQFwGCn7ywc1IEfCHguQBI1XSk56effrrY/F96ZUhvc5UrV87BrV69urPcu3dvef75553PLCCAQHgFCH7C2/bUHIFkBDx3C8wutN7G0vm/PvroI/n555/NlZD27dsXGhVa99WrPTph6plnnikDBw4stt3OL1/vP/74o5nMNdXzb9q0yTlER762O3g7K62FQw45JPojywgg8D8Bgh++CgggkEjAswGQFrxu3brmalC8SowaNSre5rxvO/bYY2XVqlUZlUOn/9BX0aSBHwkBBAoLEPwU9uATAgjE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5Oxbv3596du3r+j7vvvua/746xWEN954Q9atWyfbt2+XG264QUqVKiXXXXedc1wYF3bs2CF//vOfnap3795dTj75ZKlVq5bst99+zvp8LRx33HHyxRdfmPLkqwycFwGvChRY9/ojXi0c5UIAgewK/Oc//xG9tWXfutErO0OHDpVy5coVO7HeEtPA55FHHjHbSpcubW4JHXjggcX2DdKKadOmydatW6Vs2bImMIyu2/fffy8tWrQwq9q1ayefffZZ9GazHO/4YjunuCJR3k2aNBENXjWQ1bYmIYDAXgGuAO21YAmB0Ak899xzTvBzwQUXyPXXX1+iQbVq1UwfIe0crX94d+/eLXr1SPsNBTmddNJJJVZv06ZNzrbDDjvMWY5eiHd89H7pLGcz73TKwzEI+EmAPkB+ai3KioDLAt9++62To972SpQKCgpk+PDhzm4zZ850lsO4sGfPHqfalStXdpZZQAAB7wtwBcj7bUQJEciagF7FsVPRp77s9UXf//jHP4r2ddlnn31iPhqvQZFeWdJ0yy23SJ06deTpp5+Wjz76SGbNmmVuJ+ltMw24Lr30UqlatWrRUxT7vHPnTnnqqafk3//+t8yfP990yG7evLm0adNGunbtavrdFDsoxopPP/1UtNPy559/Lr/88os590EHHSTHHnusDBkyRPQqV9F04403ypo1a6RSpUryt7/9zWzW24D6pFx0x+gPP/xQBg8ebLYfcMABosdpinW82VDkH7fKptnqk3p6207LrWnz5s1O2Zo1a2Y6RWubaNInyQYNGmSWS/pHrcaMGWM2a/ufc845Je3KegT8I6B9gEgIIBBOgXvuuUf7AJqX9XRXxAqCMoawAgwnT6sDbuTMM890Ptvnst+tjsIR6w9/3HNaV6kibdu2LTEPzUvPsXbt2hLz0XqdeuqpcfOoWbNmxOroXSwP6/Fxc5wV8DnbrOEA4uZlBWbOvrGOdzZaC26XTfPWstrGRd87d+4csR7Pj5QpU8bsY/UPiliduaOLVGx51KhRTn6xjIodwAoEfCDAFSDrtwMJgbAKnH/++XLzzTebfkB6O0yvzFxzzTVy+umni3agzTSde+658s0335gxdPRqzzHHHCPLly+Xl19+WaZPn2465nbp0kU+/vhjczWn6Pn0qpH2c7E7aR9xxBHm6pOOafP111/L22+/bTpiT5o0SebMmSNffvmlOVd0Pvqklj4NpVeONOkVp/79+8vhhx8uegvrrbfekn/9619iBVAycOBAU64jjzwyOotiy1omHRhSx/l5/fXXzfaWLVuaK0n6IdlBI7NRNj3/hRdeaMwmTpwo2k+pQoUKon28NOkVIB2jqFevXvKPf/zDPKb/zjvvmDGezA4x/rGv6OmTbT179oyxB6sQ8KGAD4I0iogAAlkUeOmllyJW3x7nf/jWrzGzfPDBB0euuOKKyKuvvhqxxptJugTRV4A0LyuQiuhVnOhk3XqLWIGWc05rnJrozWbZuu0VsYIKZx9roMGIHhedrMAoYv1hd/axnmCL3myWrUEKne1WR+WINeBjsX3uvfdeZx8rMCq0Pd4VHCvoco678sorCx1nf4h3fDbLpue3z61XeYomvZJjt7VeQSspWbc0nf2s24Ql7cZ6BHwnIL4rMQVGAAHXBayrIBFr3B/nD539h9F+1wBJgwf9g209+h33/EUDIOsqTsz9rasvJk/7HO+++26h/axBGZ3yXHTRRYW2Ff1w9NFHm32tR9Uj3333nbNZAySr747ZZo1bVGibs9P/Fjp16uScLzoPO4iIvgVmH5tJAJTtsmkZ7bLHCoD0tpd1JcjUuWLFiiXe/rSu3Dku1lU0u+q8I+B7AZ4Cs377khAIu4De0lm0aJHprHzCCScUGwfI+k1nOv1afUHMuDdWQJLUuDKal95+ipX0iTK7o7Bu/+c//1loNx112k533nmnvRjzXTv9atLO0i+88IKzz3vvvWc6A+uKAQMGyCGHHOJsK7pw7bXXinXFS8aNGydWQFB0s+uf8102Hdfo7LPPNvXSW4zWlb5iddRBLydPnmzWt27dWvRFQiAoAvQBCkpLUg8EMhTQP/raJ0hfOoWCPtX0/vvvm3d94kmDIE36PmHCBPnggw9M3x194qmklOjRen2iyE7a38dO+nSaTsSqSfsi1a1b194U8z26z44GcnaKztPq/GuvjvmufWL0lavkhbJpXyEdy0nT888/7/QTsg3efPNNM/q3frb7ENnbeEfA7wIEQH5vQcqPQBYEdEwbnfhUX5p0zqmpU6eaR8h1rjBNOjeYTvugox/r1ZxYSUeZjpc0sNFRp7Uz8K+//ursqnnrOk0rV65MulOx7h8dAK1atUpXmdSwYUN70RPvXihbq1atREew1mEBNOBdsWKFmQLFBrI7P0dfLbK38Y6A3wW4Beb3FqT8CORAQKdS0CtD+rSWXinQP4iadJ4pfRKrpJQo6NDASZ9I0mSPWaPLP/74o76ZpLdh9A9zope9/08//WQvFrpNp3ObeSlFT02Rz7LpVSBN+kTciy++6BBp+XTEb0365JcX5jZzCscCAi4IcAXIBUSyQMCPAnrlRm/D6KPcffr0cR7hTlQX7Teij37bfUZmzJhhHlWPdZwOxpco6dUlTTqwop2iR1XW21v6OH2yyQ7OdH+dlNROGzZssBc98e6Vsp111llmdG8NNDW41WEQNFlPB5o+VbqswS8JgaAJEAAFrUWpDwJJCsyePdv5Y6fze+loyMmmU045xQmA9MpMSUlHEI6X9CrDtm3bzC46YrSddKya6GQ9Yh79MellHeXZTjr+ULykfZu075E1QGC83Vzb5pWy1ahRQ/r162c6O+s4StYwAWasIA2ANOnVP/tWqGuVJyMEPCDALTAPNAJFQCAfAtbIz85pdTBA7ficbNKAyU7xbt/oH9N4SQcztJNOyWAnvd1iXxFasGCBcyXC3l70Xa806WB+P/zwgzNoou4THWRE9w0qerx+1qkodMDAxtYgi9YI2bF2cXWdl8pm3wbTClrjA5lbhzqwpCa9QhR9Vc2s5B8EAiBAABSARqQKCKQjYI17I3YnZQ0gEj1qbp9DOyfbVwd0nTWIob2p2Ptjjz1WKCApuoM1uKGzSq8qRaejjjrKfNRHtK0xgaI3FVvW8/To0cM85h79tJKOHG130NZ97I7VxTKwVtgz3GsHbB0RO9spF2UrXbq0qYZe2YqXunXr5nR+1tubU6ZMMX2C9Jhoz3h5sA0B3wlYl31JCCAQUgFrUk99tt15WX/sItbTSSVq6CCIOlKyfYw1rk5EBzSMTkUHQrTG+one7CxHj0RsXQ2JWLfCnG26YN2OiVh/wM25qlSpErGuFhXabn/QMln9aZwyWU+p2ZvMu9bJLq8V5BXaZn+wOk5H9By6n9X/KGJdDbM3OYMJuj0Qop4gm2XT/HXwSq2TzvulAy/GSzfccIPZ1woYI1bwaZb1eBICQRVgJOigtiz1QiAJAQ1erJm9zR87O0jQP5bW49GR8847L3L//fdHxo8fH/nzn/8csebsiuiIwfZ+GihYs7MXO0vRAEj3tzoxm4Bm165dEetWlBlRWkdmtvOy5uIqlo+uuOqqq5x9rNtTEZ0OQ6ey0HKvW7cuYs0QH7EepXf2Oe2004rlYz1G7wQ3ej6rQ29EJ2m1rgZF1q9fH9GpQKy5u5w8nnnmmUJ5WLfEzLZsBEDZLJtWwrqy49RL28+azT7y5JNPFqqf/cG6fejsa7eLThFCQiCoAgRAQW1Z6oVAkgIaCOg8VtEBif0HsKR3nTbDGiQx5hmiA6Du3bsXCprsGcjtfK2+JSaIiZmRtXLz5s2RP/3pT8X+MFtjBxVb17Vr12JXkex8dZqNevXqFTpGz22Xw36PNZdYNgMgLV+2yqZ5P/TQQ8XqaPWv0k0xkzVZrbO/tlW8q4ExM2AlAj4SoA+Q9ZuPhECYBbSDq/axsa7miHXVxxmXJ5aJNUGqmT3emitLdJqLREkfr9exg6xbKaYvjnUFyDnECo5EH6GP7oDrbPzfgj4Or313dLZ2HbTP7tMS3ZdH++tYV4JMH57y5csXzcJ8toIj0c7U+gi/davLrNNpM+ykHcL1HNYVEntVzt6zWTad2kOnG6ldu7ZTH33yLnrMJWeDtRDdFjo9SvRx0fuxjEAQBAo0WAtCRagDAgi4I6C/Eqx+NaIjFesYPRps6B9C7TCtAVCiZN1ikYsvvtjsZl2BMPNr6Qf9o6uP3muQ0qJFi5RGd7bPqY/Ma9n0iS59Uqxp06YmH+vqlb1Lwnetn06zoQFRtWrVTFkSTbWRMFOXdshm2XQYgE2bNokOThk9zlJ00SdOnCjWLVGz6rXXXpOiHdOj92UZAb8LEAD5vQUpPwIeEygpAPJYMSlODAF9GkwnadWAd9myZTz+HsOIVcERSP6/TcGpMzVBAAEEECgi8O2335rJb3W19XQawU8RHz4GTyA3Q54Gz40aIYAAAr4WsJ6ik40bN5oBJ+fOnWtuW+otOJ2c1nr6ztd1o/AIJCNAAJSMEvsggAACARPQUbiPO+64YrW66667nEERi21kBQIBEuAWWIAak6oggAACyQpoZ+ii6ZJLLpFhw4YVXc1nBAIpQCfoQDYrlUIgfwLWqMpizyOl83sVndg0fyXjzNECOj2GXu3RCVD1aTqdSkSvCNlDDUTvyzICQRQgAApiq1InBBBAAAEEEIgrwC2wuDxsRAABBBBAAIEgChAABbFVqRMCCCCAAAIIxBUgAIrLw0YEEEAAAQQQCKIAAVAQW5U6IYAAAggggEBcAQKguDxsRAABBBBAAIEgChAABbFVqRMCCCCAAAIIxBUgAIrLw0YEEEAAAQQQCKIAAVAQW5U6IYAAAggggEBcAQKguDxsRAABBBBAAIEgChAABbFVqRMCCCCAAAIIxBUgAIrLw0YEEEAAAQQQCKIAAVAQW5U6IYAAAggggEBcAQKguDxsRAABBBBAAIEgChAABbFVqRMCCCCAAAIIxBUgAIrLw0YEEEAAAQQQCKIAAVAQW5U6IYAAAggggEBcAQKguDxsRAABBBBAAIEgChAABbFVqRMCCCCAAAIIxBUgAIrLw0YEEEAAAQQQCKIAAVAQW5U6IYAAAggggEBcAQKguDxsRAABBBBAAIEgChAABbFVqRMCCCCAAAIIxBX4P3C3L8aWOWT7AAAAAElFTkSuQmCC" alt width="288" /></p>
-</div>
-</div>
-<div id="how-nfilter-works-with-keep_single_genes" class="section level4">
-<h4>How nfilter works with keep_single_genes</h4>
-<ul>
-<li>When <strong><code>keep_single_genes = FALSE</code></strong>:
-<code>nfilter</code> limits only the number of interaction pairs
-returned</li>
-<li>When <strong><code>keep_single_genes = TRUE</code></strong>:
-<code>nfilter</code> limits the combined count of unique individual
-genes plus interaction pairs. The function prioritizes pairs by
-significance and adds individual genes as needed until the limit is
-reached</li>
-</ul>
-</div>
-</div>
-<div id="multideggs_combined_filter-hybrid-statistical-and-network-based-selection" class="section level3">
-<h3>multiDEGGs_combined_filter(): Hybrid Statistical and Network-Based
-Selection</h3>
-<p>The <code>multiDEGGs_combined_filter()</code> function combines
-traditional statistical feature selection with differential network
-analysis. This hybrid approach allows you to benefit from both
-conventional univariate selection methods and the biological insights
-from interaction analysis.</p>
-<div id="key-parameters-1" class="section level4">
-<h4>Key Parameters</h4>
-<ul>
-<li><strong><code>filter_method</code></strong> (character): Statistical
-method for single feature selection.<br />
-Options: <code>&quot;ttest&quot;</code>, <code>&quot;wilcoxon&quot;</code>,
-<code>&quot;ranger&quot;</code>, <code>&quot;glmnet&quot;</code>, <code>&quot;pls&quot;</code></li>
-<li><strong><code>nfilter</code></strong> (integer): Maximum number of
-features to select</li>
-<li><strong><code>dynamic_nfilter</code></strong> (logical): Controls
-how <code>nfilter</code> is applied (see detailed explanation
-below)</li>
-<li><strong><code>keep_single_genes</code></strong> (logical): When
-<code>dynamic_nfilter = TRUE</code>, determines whether to include
-individual genes from multiDEGGs pairs</li>
-</ul>
-</div>
-<div id="dynamic-vs.-balanced-selection-modes" class="section level4">
-<h4>Dynamic vs. Balanced Selection Modes</h4>
-<div id="dynamic-selection-dynamic_nfilter-true" class="section level5">
-<h5>Dynamic Selection (<code>dynamic_nfilter = TRUE</code>)</h5>
-<p>In dynamic mode, the function: 1. Selects <code>nfilter</code> single
-genes using the chosen statistical method 2. Adds ALL significant
-interaction pairs found by multiDEGGs 3. Total predictors =
-<code>nfilter</code> single genes + number of significant pairs</p>
-<p>This mode allows the feature space to expand based on the biological
-complexity discovered in each fold.</p>
-<pre class="r"><code># Dynamic selection with t-test for single genes
-fit.dynamic &lt;- nestcv.glmnet(
-  y = as.numeric(synthetic_metadata$response),
-  x = t(synthetic_rnaseqData),
-  modifyX = &quot;multiDEGGs_combined_filter&quot;,
-  modifyX_options = list(
-    filter_method = &quot;ttest&quot;, 
-    nfilter = 20,
-    dynamic_nfilter = TRUE, 
-    keep_single_genes = FALSE
-  ),
-  modifyX_useY = TRUE,
-  n_outer_folds = 5,
-  n_inner_folds = 6,
-  verbose = FALSE
-)</code></pre>
-</div>
-<div id="balanced-selection-dynamic_nfilter-false" class="section level5">
-<h5>Balanced Selection (<code>dynamic_nfilter = FALSE</code>)</h5>
-<p>In balanced mode, the function:<br />
-1. Allocates approximately half of <code>nfilter</code> to interaction
-pairs<br />
-2. Fills remaining slots with single genes from the statistical
-filter<br />
-3. Maintains consistent total number of predictors across all folds</p>
-<p>This mode ensures a fixed feature space size while balancing single
-genes and interactions.</p>
-<pre class="r"><code># Balanced selection with Wilcoxon-test importance
-fit.balanced &lt;- nestcv.train(
-  y = synthetic_metadata$response,
-  x = t(synthetic_rnaseqData),
-  method = &quot;rf&quot;,
-  modifyX = &quot;multiDEGGs_combined_filter&quot;,
-  modifyX_options = list(
-    filter_method = &quot;wilcoxon&quot;, 
-    nfilter = 40,
-    dynamic_nfilter = FALSE
-  ),
-  modifyX_useY = TRUE,
-  n_outer_folds = 5,
-  n_inner_folds = 6,
-  verbose = FALSE
-)</code></pre>
-</div>
-</div>
-<div id="available-statistical-methods" class="section level4">
-<h4>Available Statistical Methods</h4>
-<ul>
-<li><strong><code>&quot;ttest&quot;</code></strong>: Two-sample t-test for
-differential expression</li>
-<li><strong><code>&quot;wilcoxon&quot;</code></strong>: Wilcoxon rank-sum test
-(non-parametric alternative to t-test)</li>
-<li><strong><code>&quot;ranger&quot;</code></strong>: Random Forest variable
-importance scoring (the <code>ranger</code> package must be installed
-first)</li>
-<li><strong><code>&quot;glmnet&quot;</code></strong>: Elastic net regularization
-coefficients</li>
-<li><strong><code>&quot;pls&quot;</code></strong>: Partial Least Squares variable
-importance</li>
-</ul>
-</div>
-</div>
-<div id="practical-considerations" class="section level3">
-<h3>Practical considerations</h3>
-<p>Before implementing multiDEGGs in your machine learning pipeline,
-it’s highly recommended to first run a preliminary analysis on your
-complete dataset to assess the number of differential interactions
-detected. This exploratory step can guide your choice of approach and
-parameter settings.</p>
-<p>If multiDEGGs identifies only a small number of differential
-interactions (e.g., fewer than 10-20 pairs), these features alone may
-lack sufficient predictive power. In such cases, consider:</p>
-<ul>
-<li>Using <code>multiDEGGs_combined_filter()</code> to integrate
-network-based features with traditional statistical selection
-methods</li>
-<li>Setting <code>keep_single_genes = TRUE</code> in
-<code>multiDEGGs_filter()</code> to include individual genes involved in
-the differential pairs</li>
-<li>Adjusting the <code>percentile_vector</code> or significance
-thresholds in the initial multiDEGGs analysis to potentially capture
-more interactions</li>
-</ul>
-<p>Conversely, if a large number of differential interactions are
-detected, <code>multiDEGGs_filter()</code> alone may provide sufficient
-feature diversity for effective model training.</p>
-</div>
-<div id="feature-engineering-details" class="section level3">
-<h3>Feature Engineering Details</h3>
-<p>Both functions create ratio-based features from significant gene
-pairs (Gene A / Gene B), which capture the relative expression
-relationships that drive differential network connectivity. The
-<code>predict</code> methods automatically handle the feature
-transformation for both training and test data within each
-cross-validation fold, ensuring no information leakage.</p>
-<p><strong>Note:</strong> If no significant differential interactions
-are found in a particular fold, both functions automatically fall back
-to t-test-based selection to ensure robust performance across all
-scenarios. This fallback is indicated by a printed “0” during
-execution.</p>
-</div>
+# Now this can be passed to the function:
+diff_net &lt;- get_diffNetworks(expr_data, network = custom_network, ...)</code></pre>
+<p><br></p>
+<p><strong>NOTE</strong><br />
+Finally, it is important point to keep in mind that the differential
+networks obtained will be fundamentally limited by the reference
+biological network used. multiDEGGs can only identify interactions that
+are already present in the reference network, so using an incomplete or
+biased network might cause missing relevant biological relationships or,
+conversely, finding spurious associations. When choosing a reference
+network, it is important to assess its source, how comprehensive it is,
+and the quality of evidence supporting the interactions. These aspects
+should be documented when reporting multiDEGGs results.</p>
 </div>
 <div id="citation" class="section level2">
 <h2>Citation</h2>
