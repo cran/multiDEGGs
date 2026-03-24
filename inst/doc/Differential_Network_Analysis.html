@@ -1753,10 +1753,9 @@ We highly recommend to have at least 4 or 5 observations per group.</p>
 <div id="custom-reference-network" class="section level2">
 <h2>Custom Reference Network</h2>
 <p>The multiDEGGs package uses a human-specific reference network by
-default, consisting of 10,537 molecular interactions (from KEGG,
-mirTARbase, miRecords, and transmiR) obtained via the
-<code>exportgraph</code> function of the MITHrIL tool (Alaimo et al.,
-Oncotarget, 2016).</p>
+default, consisting of 53,035 molecular interactions obtained both from
+<code>Omnipath</code> (Turei et al., Molecular Systems Biology, 2021)
+and the <code>MITHrIL</code> tool (Alaimo et al., Oncotarget, 2016).</p>
 <p>Users working with non-human species or requiring custom interaction
 sets can provide their own reference network using the
 <code>network</code> parameter of the <code>get_diffNetworks()</code>
@@ -1829,22 +1828,23 @@ should be documented when reporting multiDEGGs results.</p>
 <pre class="r"><code>citation(&quot;multiDEGGs&quot;)
 #&gt; To cite package &#39;multiDEGGs&#39; in publications use:
 #&gt; 
-#&gt;   Sciacca E, et al. (2023). &quot;DEGGs: An R package with shiny app for the
-#&gt;   identification of differentially expressed gene-gene interactions in
-#&gt;   high-Throughput sequencing data.&quot; _Bioinformatics_, *39*, btad192.
-#&gt;   doi:10.1093/bioinformatics/btad192
-#&gt;   &lt;https://doi.org/10.1093/bioinformatics/btad192&gt;.
+#&gt;   Sciacca E, Wang S, Pitzalis C, Lewis M (2026). &quot;multiDEGGs: Single or
+#&gt;   Multiomic Differential Network Analysis for Biomarker Discovery and
+#&gt;   Feature Engineering for Predictive Modeling.&quot; _Computational and
+#&gt;   Structural Biotechnology Journal_, *35*(1), 0001.
+#&gt;   doi:10.34133/csbj.0001 &lt;https://doi.org/10.34133/csbj.0001&gt;.
 #&gt; 
 #&gt; A BibTeX entry for LaTeX users is
 #&gt; 
 #&gt;   @Article{,
-#&gt;     title = {DEGGs: An R package with shiny app for the identification of differentially expressed gene-gene interactions in high-Throughput sequencing data},
-#&gt;     author = {Elisabetta Sciacca and {et al.}},
-#&gt;     journal = {Bioinformatics},
-#&gt;     year = {2023},
-#&gt;     volume = {39},
-#&gt;     pages = {btad192},
-#&gt;     doi = {10.1093/bioinformatics/btad192},
+#&gt;     title = {multiDEGGs: Single or Multiomic Differential Network Analysis for Biomarker Discovery and Feature Engineering for Predictive Modeling},
+#&gt;     author = {Elisabetta Sciacca and Susan S. Wang and Costantino Pitzalis and Myles J. Lewis},
+#&gt;     journal = {Computational and Structural Biotechnology Journal},
+#&gt;     year = {2026},
+#&gt;     volume = {35},
+#&gt;     number = {1},
+#&gt;     pages = {0001},
+#&gt;     doi = {10.34133/csbj.0001},
 #&gt;   }</code></pre>
 </div>
 
